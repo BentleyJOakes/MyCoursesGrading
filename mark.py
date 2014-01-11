@@ -103,6 +103,7 @@ if __name__ == '__main__':
 
     print("Fixing up student's files")
     
+    print("Creating student directories")
     #move each file to student's directory
     for f in dirList:
         hyphen_count = f.count("-")
@@ -121,8 +122,6 @@ if __name__ == '__main__':
             student_name += " " + student_name_split[i]
             
         student_name = student_name.strip()
-        
-        print(student_name)
     
         first_name = student_name.split(" ")[0]
         last_name = student_name.split(" ")[1]
@@ -136,93 +135,60 @@ if __name__ == '__main__':
         do_command("mkdir -p \"" + new_dir + "\"")
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
         
-    '''
-
+        
+    print("Extracting student files")
     #check each file in each student directory, and decide what to do
-    for f in dirList:
-    
-        #save file name with directory prepended. Note the escaped quotations.
-        f_with_dir = "\"" + dir_name + "/" + f + "\""    
-         
-        if f.endswith(".zip"):
-            print("Unzipping zip file: " + f)
-            command_line = "unzip -j -q " + f_with_dir + " -d " + f_with_dir.replace(".zip", "")
-            #do_command(command_line)
-        else:
-            print("Can't extract file: " + f)
-        #elif f.endswith(".rar"):
-        #    print("Unraring zip file: " + f)
-        #    command_line = "file-roller -e " + f_with_dir.replace(".rar", "") + " --force " + f_with_dir
-        #    print(command_line)
-            #do_command(command_line)
-        
-    
-    thread_queue.join()
-    
-    #remove zip files
-    for f in dirList:
-        f_with_dir = "\"" + dir_name + "/" + f + "\""
-        if f.endswith(".zip"):
-            print("Removing zip file: " + f)
-            
-            command_line = "rm " + f_with_dir
-            do_command(command_line)
-            
-    thread_queue.join()
-    
     dirList = os.listdir(dir_name)
     dirList.sort()
-    
-    #remove duplicate submissions
-    student_names = {}
     for d in dirList:
         d_with_dir = dir_name + "/" + d
+        if not os.path.isdir(d_with_dir):
+            print("Error: " + d + " is not a directory.")
+            continue
+            
+        #sort student files by modification time
+        subdirList = os.listdir(d_with_dir)
+        subdirList.sort(key=lambda x: os.path.getmtime( d_with_dir + "/" + x))
         
-        if os.path.isdir(d_with_dir) and " - " in d:
-            student_name = d.split("-")[0].strip()
-            #print(student_name)
-            if not student_names.get(student_name) == None:
-                print(student_name + " is duplicate")
-                old_folder = student_names[student_name]
-                print(old_folder)
-                command_line = "rm -rf \"" + old_folder + "\""
+        zip_warning = "STUDENT_SHOULD_USE_ZIP"
+        class_warning = "STUDENT_SHOULD_REMOVE_CLASS_FILES"
+        for f in subdirList:
+            #save file name with directory prepended. Note the escaped quotations.
+            f_with_dir = "\"" + d_with_dir + "/" + f + "\""
+            if f.endswith(".zip"):
+                #print("Unzipping file: " + f)
+                command_line = "unzip -j -q -o " + f_with_dir + " -d \"" + d_with_dir + "\""
                 do_command(command_line)
-            
-            student_names[student_name] = d_with_dir
-           
-            
-    thread_queue.join()
-            
-            
-    dirList = os.listdir(dir_name)
-    dirList.sort()
-    #make sure there are no subfolders
-    for d in dirList:
-        d_with_dir = dir_name + "/" + d
-        if os.path.isdir(d_with_dir):
-            subdirList = os.listdir(d_with_dir)
-            subdirList.sort()
-            print(d_with_dir)
-            
-            for subdir in subdirList:
-                subdir_path = d_with_dir + "/" + subdir
-                if os.path.isdir(subdir_path):
-                    print("Is subdir: " + subdir_path)
-                    if subdir.endswith("__MACOSX"):
-                        print("Removing Mac folder")
-                        command_line = "rm -rf \"" + subdir_path + "\""
-                        do_command(command_line)
-                    else:
-                        subsubdirList = os.listdir(subdir_path)
-                        subsubdirList.sort()
-                        for sub_file in subsubdirList:
-                            sub_file_path = subdir_path + "/" + sub_file
-                            print(sub_file_path)
-                            new_loc = d_with_dir + "/" + sub_file
-                            command_line = "mv \"" + sub_file_path + "\" \"" + new_loc + "\""
-                            do_command(command_line)
-            
-    thread_queue.join()
+                do_command("rm " + f_with_dir)
+            elif f.endswith(".rar"):
+                #print("Unraring file: " + f)
+                command_line = "unrar e -o+ -inul "  + f_with_dir + " \"" + d_with_dir + "/\" "
+                do_command(command_line)
+                do_command("rm " + f_with_dir)
+                do_command("touch \"" + d_with_dir + "/" + zip_warning + "\"")
+            elif f.endswith(".tar.gz"):
+                #print("Untaring file: " + f)
+                command_line = "tar -C \"" + d_with_dir + "/\" -xf " + f_with_dir
+                do_command(command_line)
+                do_command("rm " + f_with_dir)
+                do_command("touch \"" + d_with_dir + "/" + zip_warning + "\"")
+            #elif f.endswith(".class"): TODO: Fix this case
+            #    print("Found class file: " + f)
+            #    do_command("touch \"" + d_with_dir + "/" + class_warning + "\"")
+            else:
+                #as we are sorting by modified, by moving the files we should only be keeping the newest files
+                #print("Other file: " + f)
+                split_filename = f.split("-")
+                filename = split_filename[-1]
+                for i in range(1, len(split_filename)):
+                    if ", 201" in split_filename[i]: #TODO: Same hack
+                        break
+                    filename = split_filename[i] + "-" + filename
+                filename = filename.strip()
+                do_command("mv " + f_with_dir + " \"" + d_with_dir + "/" + filename + "\"")
+                
+        
+    '''
     
     #=============================
     # Compile and run assignments
