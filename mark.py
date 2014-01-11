@@ -136,6 +136,9 @@ if __name__ == '__main__':
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
         
         
+    files_to_copy = ["template.txt", "compile_and_run.py"]
+    compile_and_run_script = "compile_and_run.py"
+    
     print("Extracting student files")
     #check each file in each student directory, and decide what to do
     dirList = os.listdir(dir_name)
@@ -188,44 +191,17 @@ if __name__ == '__main__':
                 do_command("mv " + f_with_dir + " \"" + d_with_dir + "/" + filename + "\"")
                 
         
-    '''
-    
-    #=============================
-    # Compile and run assignments
-    #=============================
-    
-    
-    files_to_compile = ["Agent.java", "WordList.java", "DiscussionDirector.java"]
-    files_to_run = ["Agent.java", "WordList.java", "DiscussionDirector.java"]
-    files_to_copy = ["template.txt", "run.py"]
-    
-    dirList = os.listdir(dir_name)
-    dirList.sort()
-    for d in dirList:
-        d_with_dir = "\"" + dir_name + "/" + d 
-        
+        #copy the script to compile files, as well as the marking template
         for copy_file in files_to_copy:
-            command_line = "cp ./" +  copy_file + " " + d_with_dir + "/" + copy_file + "\""
-            thread_queue.put((command_line))
+            command_line = "cp ./" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
+            do_command(command_line)
             
-        if "." in d:
-            print("Skipping " + d_with_dir)
-            continue
-            
-        for compile_file in files_to_compile:
-            command_line = "javac -cp " +  d_with_dir + "\" " + d_with_dir + "/" + compile_file + "\""
-            thread_queue.put((command_line))
-            
-            
-        #TODO: Fix running
-        for run_file in files_to_run:
-            command_line = "java -cp " +  d_with_dir + "\" " + d_with_dir + "/" + run_file + "\" &> "  + d_with_dir + "/" + run_file.replace(".java", "") + ".txt\""
-            subprocess.call(command_line, shell=True)
-            
-            
-     #TODO: Fix ending       
-    #thread_queue.join()
-    #p.close()
-    '''
+        #run the compiling/running script
+        saved_working_path = os.getcwd()
+        print(d_with_dir + "/")
+        os.chdir(d_with_dir + "/")
+        command_line = "python3 " + compile_and_run_script + " > output.txt"
+        do_command(command_line)
+        os.chdir(saved_working_path)
 
 
