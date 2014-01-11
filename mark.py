@@ -45,30 +45,109 @@ def fixFile(name):
     g.close()
 
     
-def do_command(command_line):
-    #subprocess.call(command_line, shell=True)
-    thread_queue.put((command_line))
+def do_command(command_line, parallelize=False):
+    if not parallelize:
+        subprocess.call(command_line, shell=True)
+    else:
+        thread_queue.put((command_line))
 
 if __name__ == '__main__':
-    print("Beginning marking")
+    print("Beginning marking...")
 
+    #set flags
+    reset_mode = False
+    if len(sys.argv) > 1 and sys.argv[1] == "--reset":
+        print("Setting reset mode. Files directory will be deleted if found.")
+        reset_mode = True
+    
+    #=============================
+    # Initial safety checks and extracting main zip
+    #=============================
+    
+    print("Looking for main zip file and for files directory in this directory...")
+    fileList = os.listdir(".")
+    zip_file = None
+    for f in fileList:
+        if f.endswith(".zip") and "Download" in f:
+            zip_file = f
+        elif f == "files":
+            if not reset_mode:
+                sys.exit("Error: 'files' directory already created. Please remove it before running this script again.")
+            elif reset_mode:
+                do_command("rm -rf ./files")
+    
+    if zip_file == None:
+        sys.exit("Error: Main zip file not found")
+        
+    print("Extracting main zip file to files directory...")
+    
+    do_command("mkdir files")
+    
+    command_line = "unzip -q \"" + zip_file + "\" -d ./files/"
+    do_command(command_line)
+    
+    do_command("rm ./files/index.html")
+    
+    #=============================
+    # Extracting zip files into individual folders
+    #=============================
+    
     dir_name = "./files"
     dirList = os.listdir(dir_name)
     dirList.sort()
         
-    p = Pool()
-    num_threads = 1
-    (thread_queue, threads) = start_threads(num_threads)
+    #p = Pool()
+    #num_threads = 1
+    #(thread_queue, threads) = start_threads(num_threads)
     
 
-    #extract zip files into directories
+    print("Fixing up student's files")
+    
+    #move each file to student's directory
     for f in dirList:
-        f_with_dir = "\"" + dir_name + "/" + f + "\""     
+        hyphen_count = f.count("-")
+        if hyphen_count < 2:
+            print("Error: " + f + " is not a proper file")
+            continue
+            
+        #deal with hyphens to get student's name 
+        
+        student_name_split = f.split("-")
+        student_name = student_name_split[0]
+        for i in range(1, len(student_name_split)):
+            if ", 20" in student_name_split[i]:
+                break #TODO: Fix hack
+                
+            student_name += " " + student_name_split[i]
+            
+        student_name = student_name.strip()
+        
+        print(student_name)
+    
+        first_name = student_name.split(" ")[0]
+        last_name = student_name.split(" ")[1]
+        for i in range(2, len(student_name.split(" "))):
+            last_name += " " + student_name.split(" ")[i]
+        full_name = last_name + " " + first_name
+        full_name = full_name.strip()
+        
+        new_dir = dir_name + "/" + full_name
+        
+        do_command("mkdir -p \"" + new_dir + "\"")
+        do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
+        
+    '''
+
+    #check each file in each student directory, and decide what to do
+    for f in dirList:
+    
+        #save file name with directory prepended. Note the escaped quotations.
+        f_with_dir = "\"" + dir_name + "/" + f + "\""    
+         
         if f.endswith(".zip"):
             print("Unzipping zip file: " + f)
-            command_line = "unzip " + f_with_dir + " -d " + f_with_dir.replace(".zip", "")
-            do_command(command_line)
-            
+            command_line = "unzip -j -q " + f_with_dir + " -d " + f_with_dir.replace(".zip", "")
+            #do_command(command_line)
         else:
             print("Can't extract file: " + f)
         #elif f.endswith(".rar"):
@@ -77,6 +156,7 @@ if __name__ == '__main__':
         #    print(command_line)
             #do_command(command_line)
         
+    
     thread_queue.join()
     
     #remove zip files
@@ -109,22 +189,7 @@ if __name__ == '__main__':
                 do_command(command_line)
             
             student_names[student_name] = d_with_dir
-            
-    thread_queue.join()
-    
-    #rename folders to be lastname firstname
-    student_names = {}
-    for d in dirList:
-        d_with_dir = dir_name + "/" + d
-        if os.path.isdir(d_with_dir) and " - " in d:
-            student_name = d.split(" - ")[0].strip()
-            print(student_name)
-            name_split=student_name.split(" ")
-            first = name_split[0]
-            rest = name_split[-1]
-                
-            command_line = "mv \"" + d_with_dir + "\" \"" + dir_name + "/" + rest + " " + first + "\""
-            do_command(command_line)
+           
             
     thread_queue.join()
             
@@ -159,6 +224,10 @@ if __name__ == '__main__':
             
     thread_queue.join()
     
+    #=============================
+    # Compile and run assignments
+    #=============================
+    
     
     files_to_compile = ["Agent.java", "WordList.java", "DiscussionDirector.java"]
     files_to_run = ["Agent.java", "WordList.java", "DiscussionDirector.java"]
@@ -191,6 +260,6 @@ if __name__ == '__main__':
      #TODO: Fix ending       
     #thread_queue.join()
     #p.close()
-        
+    '''
 
 
