@@ -200,7 +200,7 @@ if __name__ == '__main__':
         saved_working_path = os.getcwd()
         print(d_with_dir + "/")
         os.chdir(d_with_dir + "/")
-        command_line = "python3 " + compile_and_run_script + " > output.txt"
+        command_line = "python3 " + compile_and_run_script
         do_command(command_line)
         os.chdir(saved_working_path)
 
