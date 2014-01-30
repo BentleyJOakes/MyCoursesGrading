@@ -46,6 +46,7 @@ def fixFile(name):
 
     
 def do_command(command_line, parallelize=False):
+    #print(command_line)
     if not parallelize:
         subprocess.call(command_line, shell=True)
     else:
@@ -140,7 +141,7 @@ if __name__ == '__main__':
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
         
         
-    files_to_copy = ["template.txt", "compile_and_run.py", "TestIndexedHeap.java", "correct_answer.txt"]
+    files_to_copy = ["template.txt", "compile_and_run.py", "correct_answer.txt"]
     compile_and_run_script = "compile_and_run.py"
     
     print("Extracting student files")
