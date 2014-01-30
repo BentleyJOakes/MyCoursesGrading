@@ -130,6 +130,10 @@ if __name__ == '__main__':
         full_name = last_name + " " + first_name
         full_name = full_name.strip()
         
+        #handle encoding issues with the name
+        raw_arg = full_name.encode(sys.getfilesystemencoding(), 'surrogateescape')
+        full_name = raw_arg.decode('utf-8', 'ignore')
+        
         new_dir = dir_name + "/" + full_name
         
         do_command("mkdir -p \"" + new_dir + "\"")
@@ -183,11 +187,13 @@ if __name__ == '__main__':
                 #print("Other file: " + f)
                 split_filename = f.split("-")
                 filename = split_filename[-1]
-                for i in range(1, len(split_filename)):
+                
+                for i in range(len(split_filename), 1):
                     if ", 201" in split_filename[i]: #TODO: Same hack
                         break
                     filename = split_filename[i] + "-" + filename
                 filename = filename.strip()
+                #print("Moving to filename: " + filename)
                 do_command("mv " + f_with_dir + " \"" + d_with_dir + "/" + filename + "\"")
                 
         
