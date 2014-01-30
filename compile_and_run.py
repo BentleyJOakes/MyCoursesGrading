@@ -4,7 +4,7 @@ import subprocess
 import os
 import sys
 from datetime import datetime
-
+import ConfigParser
 
 files_to_compile = [[".", "Question2.java"]]
 
@@ -15,26 +15,45 @@ error_runtime = "-5"
 error_output  = "-5"
 
 
-def do_command(command_line):
-    print(command_line)
+def do_command(command_line, debug=False):
+
+    if(debug == True):
+        print(command_line)
     subprocess.call(command_line, shell=True)
 
+config_file = "config.cfg"
+config = ConfigParser.ConfigParser()
+config.read(config_file)
+
+files_to_compile = config.get("default", "files_to_compile").split(",")
+
+compile_file_packages = []
+compile_file_names = []
+
+#TODO: very hacky
+for i in range(0, len(files_to_compile)):
+    files_to_compile[i] = files_to_compile[i].strip().replace("\"", "")
+
+    compile_file_parts = files_to_compile[i].split(".")
+    if len(compile_file_parts) == 3:
+        compile_file_packages.append(compile_file_parts[0])
+        compile_file_names.append(compile_file_parts[1] + "." + compile_file_parts[2])
+    else:
+        compile_file_packages.append("")
+        compile_file_names.append(compile_file_parts[0] + "." + compile_file_parts[1])
 
 
 #Move assignments to right folder for packages
 
 fileList = os.listdir(".")
 fileList.sort()
-for f in fileList:
-	for compile_package, compile_file in files_to_compile:
-		if (f == compile_file):
-			command_line = "mkdir -p " + compile_package
-			subprocess.call(command_line, shell=True)
 
-			command_line = "mv " + f + " " + compile_package + "/" + compile_file
-			subprocess.call(command_line, shell=True)
-
-		#print(f)
+for i in range(len(files_to_compile)):
+    if (compile_file_packages[i] != ""):
+        for f in fileList:
+            if (f == compile_file_names[i]):
+                do_command("mkdir -p " + compile_file_packages[i])
+                do_command("mv " + f + " " + compile_file_packages[i] + "/" + compile_file_names[i])
 
 #=============================
 # Compile and run assignments
@@ -52,10 +71,11 @@ command_line = "echo \"" + str(datetime.now()) + "\n\"" + " >> LOG_FILE.txt"
 subprocess.call(command_line, shell=True)
 
 
-for compile_package, compile_file in files_to_compile:
+for i in range(len(files_to_compile)):
 
-    if compile_package != ".":
-
+    if compile_file_packages[i] != "":
+        compile_package = compile_file_packages[i]
+        compile_file = compile_file_names[i]
         #check for package errors
         saw_a_package = False
         saw_right_package = False
@@ -65,7 +85,7 @@ for compile_package, compile_file in files_to_compile:
         for line in f:
             if "package" in line: #TODO: Could be wrong
                 saw_a_package = True
-                package_name = line.split(" ")[1].strip().replace(";", "")
+                package_name = line.split(" ")[1].split("//")[0].strip().replace(";", "")
                 if package_name == compile_package:
                     saw_right_package = True
         f.close()
@@ -75,9 +95,7 @@ for compile_package, compile_file in files_to_compile:
             if saw_a_package:
                 print("Saw package: " + package_name)
                 
-            command_line = "echo \"" + error_package + ": Wrong package. Should be: " + compile_package +".\"" + " | tee -a LOG_FILE.txt > PACKAGE_ERRORS.txt"
-            subprocess.call(command_line, shell=True)
-        
+            do_command("echo \"" + error_package + ": Wrong package. Should be: " + compile_package +".\"" + " | tee -a LOG_FILE.txt > PACKAGE_ERRORS.txt")
         
             g = open(compile_package + "/temp.file", "w")
             f = open(compile_package + "/" + compile_file)
@@ -95,17 +113,14 @@ for compile_package, compile_file in files_to_compile:
             f.close()
             g.close()
             
-            command_line = "mv \"" + compile_package + "/temp.file\" " + "\"" + compile_package + "/" + compile_file + "\""
-            subprocess.call(command_line, shell=True)
+            do_command("mv \"" + compile_package + "/temp.file\" " + "\"" + compile_package + "/" + compile_file + "\"")
 
-    file_path = compile_file
-    if compile_package != ".":
-        file_path = compile_package + "/" + compile_file
+    file_path = compile_file_names[i]
+    if compile_file_packages[i] != "":
+        file_path = compile_file_packages[i] + "/" + file_path
 
     do_command("javac " + file_path + " 2>&1 >/dev/null | tee -a LOG_FILE.txt > COMPILE_ERRORS.txt")
     
-    #command_line = "javac " + compile_package + "/" + compile_file + " 2>> LOG_FILE.txt"
-    #subprocess.call(command_line, shell=True)
 
 size_of_error_file = os.stat("COMPILE_ERRORS.txt").st_size
 if size_of_error_file == 0:
@@ -121,16 +136,39 @@ subprocess.call(command_line, shell=True)
 command_line = "rm -f RUN_ERRORS.txt"
 subprocess.call(command_line, shell=True)
 
-files_to_run = [[".", "Question2"]]
-params_to_files = ["", "", "", "", ""]
 
-for i in range(len(files_to_run)):
 
-    file_path = files_to_run[i][1]
-    if compile_package != ".":
-        file_path = files_to_run[i][0] + "/" + file_path
+#===============================
+# Start running
 
-    do_command("java " + file_path + " " + params_to_files[i] + " >> output.txt 2>> RUN_ERRORS.txt")
+
+
+files_to_run = config.get("default", "files_to_run").split(",")
+
+run_file_packages = []
+run_file_names = []
+run_file_params = []
+
+#TODO: very hacky
+for i in range(0, len(files_to_run)):
+    files_to_run[i] = files_to_run[i].strip().replace("\"", "")
+
+    run_file_parts = files_to_run[i].split(".")
+    if len(run_file_parts) == 3:
+        run_file_packages.append(run_file_parts[0])
+        run_file_names.append(run_file_parts[1] + "." + run_file_parts[2])
+    else:
+        run_file_packages.append("")
+        run_file_names.append(run_file_parts[0] + "." + run_file_parts[1])
+    run_file_params.append("")
+
+for i in range(len(run_file_names)):
+
+    file_path = run_file_names[i]
+    if run_file_packages[i] != "":
+        file_path = run_file_packages[i] + "/" + file_path
+
+    do_command("java " + file_path + " " + run_file_params[i] + " >> output.txt 2>> RUN_ERRORS.txt")
     
     do_command("cat RUN_ERRORS.txt >> LOG_FILE.txt")
 

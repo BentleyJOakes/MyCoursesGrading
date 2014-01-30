@@ -9,6 +9,7 @@ from multiprocessing import Pool, Process, JoinableQueue
 #parallelization
 import threading
 from helper import *
+import ConfigParser
 
 def start_threads(num_threads):
     #parallelize
@@ -80,6 +81,19 @@ if __name__ == '__main__':
     if zip_file == None:
         sys.exit("Error: Main zip file not found")
         
+    config_file = "config.cfg"
+    print("Loading config file: " + config_file)
+    config = ConfigParser.ConfigParser()
+    config.read(config_file)
+
+    files_to_copy = config.get("default", "files_to_copy").split(",")
+    
+    #TODO: very hacky
+    for i in range(0, len(files_to_copy)):
+        files_to_copy[i] = files_to_copy[i].strip().replace("\"", "")
+
+    print(files_to_copy)
+
     print("Extracting main zip file to files directory...")
     
     do_command("mkdir files")
@@ -132,8 +146,9 @@ if __name__ == '__main__':
         full_name = full_name.strip()
         
         #handle encoding issues with the name
-        raw_arg = full_name.encode(sys.getfilesystemencoding(), 'surrogateescape')
-        full_name = raw_arg.decode('utf-8', 'ignore')
+        #raw_arg = full_name.encode('utf-8', 'surrogateescape')
+        full_name = full_name.decode('utf-8', 'ignore')
+        f = f.decode('utf-8', 'ignore')
         
         new_dir = dir_name + "/" + full_name
         
@@ -141,7 +156,7 @@ if __name__ == '__main__':
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
         
         
-    files_to_copy = ["template.txt", "compile_and_run.py", "correct_answer.txt"]
+    
     compile_and_run_script = "compile_and_run.py"
     
     print("Extracting student files")
@@ -207,7 +222,7 @@ if __name__ == '__main__':
         saved_working_path = os.getcwd()
         print(d_with_dir + "/")
         os.chdir(d_with_dir + "/")
-        command_line = "python3 " + compile_and_run_script
+        command_line = "python " + compile_and_run_script
         do_command(command_line)
         os.chdir(saved_working_path)
 
