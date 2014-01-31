@@ -8,50 +8,21 @@ import codecs
 from multiprocessing import Pool, Process, JoinableQueue
 #parallelization
 import threading
-from helper import *
-import ConfigParser
+import configparser
 
-def start_threads(num_threads):
-    #parallelize
-    thread_queue = JoinableQueue()
-    threads = []
 
-    #spawn a pool of threads, and pass them queue instance
-    print('\nStarting to make threads...')
-    for i in range(num_threads):
-        t = Command(i, thread_queue)
-        t.start()
-        threads.append(t)
-
-    print('Created ' + str(len(threads)) + ' threads')
-    return (thread_queue, threads)
+def handle_encoding(s):
+    #TODO: Fix better
+    s = s.encode('utf-8', 'ignore')
     
-
-def fixFile(name):
-    print("Fixing: " + filename)
-    f = codecs.open(name, "r", "utf-8")
-    g = codecs.open(name + ".bak", "w", "utf-8")
-    #for line in f:
-    #    g.write(line.replace("isConsecutive", "IsConsecutive"))
-        
-    f.close()
-    g.close()
+    s = s.decode('utf-8', 'ignore')
+    return s.replace("+", "")
     
-    f = codecs.open(name, "w", "utf-8")
-    g = codecs.open(name + ".bak", "r", "utf-8")
-    for line in g:
-        f.write(line)
-        
-    f.close()
-    g.close()
-
-    
-def do_command(command_line, parallelize=False):
+def do_command(command_line, debug=False):
     #print(command_line)
-    if not parallelize:
-        subprocess.call(command_line, shell=True)
-    else:
-        thread_queue.put((command_line))
+    if debug:
+        print(command_line)
+    subprocess.call(command_line, shell=True)
 
 if __name__ == '__main__':
     print("Beginning marking...")
@@ -83,7 +54,7 @@ if __name__ == '__main__':
         
     config_file = "config.cfg"
     print("Loading config file: " + config_file)
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(config_file)
 
     files_to_copy = config.get("default", "files_to_copy").split(",")
@@ -121,6 +92,8 @@ if __name__ == '__main__':
     print("Creating student directories")
     #move each file to student's directory
     for f in dirList:
+        #f = handle_encoding(f)
+        
         hyphen_count = f.count("-")
         if hyphen_count < 2:
             print("Error: " + f + " is not a proper file")
@@ -145,15 +118,13 @@ if __name__ == '__main__':
         full_name = last_name + " " + first_name
         full_name = full_name.strip()
         
-        #handle encoding issues with the name
-        #raw_arg = full_name.encode('utf-8', 'surrogateescape')
-        full_name = full_name.decode('utf-8', 'ignore')
-        f = f.decode('utf-8', 'ignore')
-        
+        full_name = handle_encoding(full_name)
         new_dir = dir_name + "/" + full_name
         
         do_command("mkdir -p \"" + new_dir + "\"")
-        do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + f + "\"")
+        
+        new_name = handle_encoding(f)
+        do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + new_name + "\"")
         
         
     
@@ -176,6 +147,7 @@ if __name__ == '__main__':
         zip_warning = "STUDENT_SHOULD_USE_ZIP"
         class_warning = "STUDENT_SHOULD_REMOVE_CLASS_FILES"
         for f in subdirList:
+            #f = handle_encoding(f)
             #save file name with directory prepended. Note the escaped quotations.
             f_with_dir = "\"" + d_with_dir + "/" + f + "\""
             if f.endswith(".zip"):

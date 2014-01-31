@@ -64,6 +64,32 @@ public class TestIndexedHeap {
 		for (int i=0; i < numElements; i++){
 			System.out.println( String.valueOf(names[i]) + " " + String.valueOf(priorities[i])    );
 		}
+		
+		
+		/*
+         *  Here is a little test to ensure that the namesToIndex map was updated correctly during removeMin().
+         *  After the first three adds,  the heap should be [*,  a,  c, b] and namesToIndex is {a:1, b:3, c:2}
+         *  We then removeMin which removes the a and the heap becomes [*, b, c] and namesToIndex is {b:1, c:2}
+         *  If, however, namesToIndex was not updated by removeMin,  then namesToIndex will stay as {b:3, c:2}
+         *  We then add "d" and the heap becomes [*, b, c, d] and namesToIndex is {b:3, c:2, d:3} and now you
+         *  can see there is a problem, namely both b and d point to the same slot.   In particular, nameToIndex's
+         *  mapping of b is wrong.   So when we change the priority of b, in fact we will change the priority of d
+         *  which leads to an error.
+         *
+         */
+
+        pq = new IndexedHeap();
+        pq.add( "a" , 1.0);
+        pq.add( "c" , 3.0);
+        pq.add( "b" , 2.0);
+        System.out.println( String.valueOf(pq.getMinPriority())  + " " +  String.valueOf(pq.removeMin())  );
+        pq.add("d",4.0);
+        pq.changePriority("b" , 5.0 );
+        int i = 0;
+        while ( !(pq.isEmpty()) && i < 100){
+            System.out.println( String.valueOf(pq.getMinPriority())  + " " + String.valueOf(pq.removeMin())  );
+            i++;
+        }
 	}
 
 }

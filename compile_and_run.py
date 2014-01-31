@@ -4,9 +4,8 @@ import subprocess
 import os
 import sys
 from datetime import datetime
-import ConfigParser
+import configparser
 
-files_to_compile = [[".", "Question2.java"]]
 
 #package, compile, run, not right output
 error_package = "-5"
@@ -22,7 +21,7 @@ def do_command(command_line, debug=False):
     subprocess.call(command_line, shell=True)
 
 config_file = "config.cfg"
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read(config_file)
 
 files_to_compile = config.get("default", "files_to_compile").split(",")
