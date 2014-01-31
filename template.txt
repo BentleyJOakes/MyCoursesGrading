@@ -1,15 +1,25 @@
 Q1:
-Total: 35/35
-
-Q2:
-Total: 30/30
-
-Q3:
-Total: 35/35
-
+    swap:
+    
+    Total: 25/25
+    
+    
+    removeMin:
+    
+    Total: 25/25
+    
+    
+    add:
+    
+    Total: 25/25
+    
+    
+    changePriority:
+    
+    Total: 25/25
 
 Assignment Total: 100/100
 
 Email bentley.oakes@mail.mcgill.ca if you have questions/comments/complaints
 
-Have a good break!
+Email a TA or check out http://www.mcgill.ca/tutoring/ if you are having difficulty with the course
