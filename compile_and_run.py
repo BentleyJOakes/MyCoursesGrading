@@ -143,23 +143,31 @@ subprocess.call(command_line, shell=True)
 
 
 files_to_run = config.get("default", "files_to_run").split(",")
+files_arguments = config.get("default", "files_arguments").split(",")
+files_input = config.get("default", "files_input").split(",")
+
+#print(files_to_run)
+#print(files_input)
 
 run_file_packages = []
 run_file_names = []
 run_file_params = []
+run_file_input = []
 
 #TODO: very hacky
 for i in range(0, len(files_to_run)):
     files_to_run[i] = files_to_run[i].strip().replace("\"", "")
 
     run_file_parts = files_to_run[i].split(".")
-    if len(run_file_parts) == 3:
+    if len(run_file_parts) == 2:
         run_file_packages.append(run_file_parts[0])
-        run_file_names.append(run_file_parts[1] + "." + run_file_parts[2])
+        run_file_names.append(run_file_parts[1])
     else:
         run_file_packages.append("")
-        run_file_names.append(run_file_parts[0] + "." + run_file_parts[1])
+        run_file_names.append(run_file_parts[0])
     run_file_params.append("")
+    
+    run_file_input.append(files_input[i].strip().replace("\"", ""))
 
 for i in range(len(run_file_names)):
 
@@ -167,7 +175,7 @@ for i in range(len(run_file_names)):
     if run_file_packages[i] != "":
         file_path = run_file_packages[i] + "/" + file_path
 
-    do_command("java " + file_path + " " + run_file_params[i] + " >> output.txt 2>> RUN_ERRORS.txt")
+    do_command("echo \"" + run_file_input[i] + "\" | java " + file_path + " " + run_file_params[i] + " >> output.txt 2>> RUN_ERRORS.txt")
     
     do_command("cat RUN_ERRORS.txt >> LOG_FILE.txt")
 
