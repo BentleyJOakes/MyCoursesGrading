@@ -175,7 +175,7 @@ for i in range(len(run_file_names)):
     if run_file_packages[i] != "":
         file_path = run_file_packages[i] + "/" + file_path
 
-    do_command("echo \"" + run_file_input[i] + "\" | java " + file_path + " " + run_file_params[i] + " >> output.txt 2>> RUN_ERRORS.txt")
+    do_command("echo -e \"" + run_file_input[i] + "\" | java " + file_path + " " + run_file_params[i] + " >> output.txt 2>> RUN_ERRORS.txt")
     
     do_command("cat RUN_ERRORS.txt >> LOG_FILE.txt")
 
@@ -190,22 +190,26 @@ else:
 #===========================
 #Check output vs correct answer
 
-f = open("correct_answer.txt", "r")
-correct_answer = []
-for line in f:
-	correct_answer.append(line)
-f.close()
+correct_answer_file = config.get("default", "correct_output_file")
+#print("Correct output file: " + correct_answer_file)
 
-g = open("output.txt", "r")
-output = []
-for line in g:
-	output.append(line)
-g.close()
+if correct_answer_file != "\"\"":
+    f = open(correct_answer_file, "r")
+    correct_answer = []
+    for line in f:
+	    correct_answer.append(line)
+    f.close()
 
-for i in range(len(correct_answer)):
-	if correct_answer[i] != output[i]:
-		print(correct_answer[i] + " is not " + output[i])
-		break
+    g = open("output.txt", "r")
+    output = []
+    for line in g:
+	    output.append(line)
+    g.close()
+
+    for i in range(len(correct_answer)):
+	    if correct_answer[i] != output[i]:
+		    print(correct_answer[i] + " is not " + output[i])
+		    break
 
 
 
