@@ -18,7 +18,12 @@ def do_command(command_line, debug=False):
 
     if(debug == True):
         print(command_line)
-    subprocess.call(command_line, shell=True)
+        
+    try:
+        output = subprocess.check_output(command_line, stderr=subprocess.STDOUT, shell=True, timeout=5)
+        
+    except Exception:
+        pass
 
 config_file = "config.cfg"
 config = configparser.ConfigParser()
