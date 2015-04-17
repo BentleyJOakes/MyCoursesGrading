@@ -7,15 +7,14 @@ import subprocess
 import codecs
 from multiprocessing import Pool, Process, JoinableQueue
 #parallelization
-import threading
 import configparser
 
 
 def handle_encoding(s):
     #TODO: Fix better
-    s = s.encode('utf-8', 'ignore')
-    
-    s = s.decode('utf-8', 'ignore')
+    s = s.encode('utf-8', 'replace')
+
+    s = s.decode('utf-8', 'replace')
     return s.replace("+", "")
     
 def do_command(command_line, debug=False):
@@ -39,20 +38,21 @@ if __name__ == '__main__':
     
     print("Looking for main zip file and for files directory in this directory...")
     fileList = os.listdir(".")
-    zip_file = None
+    zip_files = []
     for f in fileList:
         if f.endswith(".zip") and "Download" in f:
-            zip_file = f
+            print("Zip: " + f)
+            zip_files.append(f)
         elif f == "files":
             if not reset_mode:
                 sys.exit("Error: 'files' directory already created. Please remove it before running this script again.")
             elif reset_mode:
                 do_command("rm -rf ./files")
     
-    if zip_file == None:
-        sys.exit("Error: Main zip file not found")
+    if zip_files is []:
+        sys.exit("Error: No zip files were found")
         
-    config_file = "config.cfg"
+    config_file = "config/config.cfg"
     print("Loading config file: " + config_file)
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -68,9 +68,10 @@ if __name__ == '__main__':
     print("Extracting main zip file to files directory...")
     
     do_command("mkdir files")
-    
-    command_line = "unzip -q \"" + zip_file + "\" -d ./files/"
-    do_command(command_line)
+
+    for z in zip_files:
+        command_line = "unzip -q \"" + z + "\" -d ./files/"
+        do_command(command_line)
     
     do_command("rm ./files/index.html")
     
@@ -88,27 +89,33 @@ if __name__ == '__main__':
     
 
     print("Fixing up student's files")
-    
+
+    for f in dirList:
+        new_f = handle_encoding(f)
+
+        if new_f != f:
+            do_command("mv \"" + dir_name + "/" + f + "\" \"" + dir_name + "/" + new_f + "\"")
+
+    dirList = os.listdir(dir_name)
+    dirList.sort()
+
     print("Creating student directories")
     #move each file to student's directory
     for f in dirList:
-        #f = handle_encoding(f)
+
+        #print("File: " + f)
         
         hyphen_count = f.count("-")
-        if hyphen_count < 2:
+        if hyphen_count < 4:
             print("Error: " + f + " is not a proper file")
             continue
             
         #deal with hyphens to get student's name 
         
-        student_name_split = f.split("-")
-        student_name = student_name_split[0]
-        for i in range(1, len(student_name_split)):
-            if ", 20" in student_name_split[i]:
-                break #TODO: Fix hack
-                
-            student_name += " " + student_name_split[i]
-            
+        student_name_split = f.split(" - ")
+        student_name = student_name_split[1]
+        #print(student_name)
+
         student_name = student_name.strip()
     
         first_name = student_name.split(" ")[0]
@@ -129,8 +136,8 @@ if __name__ == '__main__':
         
     
     compile_and_run_script = "compile_and_run.py"
-    
-    print("Extracting student files")
+
+    print("\nExtracting student files")
     #check each file in each student directory, and decide what to do
     dirList = os.listdir(dir_name)
     dirList.sort()
@@ -139,11 +146,11 @@ if __name__ == '__main__':
         if not os.path.isdir(d_with_dir):
             print("Error: " + d + " is not a directory.")
             continue
-            
+
         #sort student files by modification time
         subdirList = os.listdir(d_with_dir)
         subdirList.sort(key=lambda x: os.path.getmtime( d_with_dir + "/" + x))
-        
+
         zip_warning = "STUDENT_SHOULD_USE_ZIP"
         class_warning = "STUDENT_SHOULD_REMOVE_CLASS_FILES"
         for f in subdirList:
@@ -175,7 +182,7 @@ if __name__ == '__main__':
                 #print("Other file: " + f)
                 split_filename = f.split("-")
                 filename = split_filename[-1]
-                
+
                 for i in range(len(split_filename), 1):
                     if ", 201" in split_filename[i]: #TODO: Same hack
                         break
@@ -183,13 +190,16 @@ if __name__ == '__main__':
                 filename = filename.strip()
                 #print("Moving to filename: " + filename)
                 do_command("mv " + f_with_dir + " \"" + d_with_dir + "/" + filename + "\"")
-                
-        
+
+        command_line = "cp ./compile_and_run.py \"" + d_with_dir + "/compile_and_run.py\""
+        do_command(command_line)
+
         #copy the script to compile files, as well as the marking template
         for copy_file in files_to_copy:
-            command_line = "cp ./" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
+            print("copy file: " + copy_file)
+            command_line = "cp ./config/" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
             do_command(command_line)
-            
+
         #run the compiling/running script
         saved_working_path = os.getcwd()
         print(d_with_dir + "/")
