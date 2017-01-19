@@ -16,7 +16,7 @@ error_output  = "-5"
 
 def do_command(command_line, debug=False):
 
-    if(debug == True):
+    if debug:
         print(command_line)
         
     try:
@@ -29,7 +29,7 @@ config_file = "config.cfg"
 config = configparser.ConfigParser()
 config.read(config_file)
 
-files_to_compile = config.get("default", "files_to_compile").split(",")
+files_to_compile = config["default"]["files_to_compile"].split(",")
 
 compile_file_packages = []
 compile_file_names = []
@@ -48,14 +48,13 @@ for i in range(0, len(files_to_compile)):
 
 
 #Move assignments to right folder for packages
-
 fileList = os.listdir(".")
 fileList.sort()
 
 for i in range(len(files_to_compile)):
-    if (compile_file_packages[i] != ""):
+    if compile_file_packages[i] != "":
         for f in fileList:
-            if (f == compile_file_names[i]):
+            if f == compile_file_names[i]:
                 do_command("mkdir -p " + compile_file_packages[i])
                 do_command("mv " + f + " " + compile_file_packages[i] + "/" + compile_file_names[i])
 
@@ -94,7 +93,7 @@ for i in range(len(files_to_compile)):
                     saw_right_package = True
         f.close()
         
-        if saw_right_package == False:
+        if not saw_right_package:
             print("Did not see package: " + compile_package)
             if saw_a_package:
                 print("Saw package: " + package_name)
@@ -147,9 +146,9 @@ subprocess.call(command_line, shell=True)
 
 
 
-files_to_run = config.get("default", "files_to_run").split(",")
-files_arguments = config.get("default", "files_arguments").split(",")
-files_input = config.get("default", "files_input").split(",")
+files_to_run = config["default"]["files_to_run"].split(",")
+files_arguments = config["default"]["files_arguments"].split(",")
+files_input = config["default"]["files_input"].split(",")
 
 #print(files_to_run)
 #print(files_input)
@@ -163,7 +162,7 @@ for i in range(0, len(files_to_run)):
     files_to_run[i] = files_to_run[i].strip().replace("\"", "")
 
     run_file_parts = files_to_run[i].split(".")
-    if len(run_file_parts) > 0:
+    if len(run_file_parts) > 1:
         run_file_packages.append(run_file_parts[0])
         run_file_names.append(run_file_parts[1])
     else:

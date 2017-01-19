@@ -1,3 +1,4 @@
+
 #! /bin/python3
 
 import sys
@@ -5,20 +6,19 @@ import os
 import random
 import subprocess
 import codecs
-from multiprocessing import Pool, Process, JoinableQueue
-#parallelization
+
 import configparser
 
 
-def handle_encoding(s):
-    #TODO: Fix better
-    s = s.encode('utf-8', 'replace')
+import unicodedata
 
-    s = s.decode('utf-8', 'replace')
-    return s.replace("+", "")
+from PlagarismDetector import PlagarismDetector
+
+
+def handle_encoding(s):
+    return str(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('utf-8', 'ignore'))
     
 def do_command(command_line, debug=False):
-    #print(command_line)
     if debug:
         print(command_line)
     subprocess.call(command_line, shell=True)
@@ -57,14 +57,14 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(config_file)
 
-    files_to_copy = config.get("default", "files_to_copy").split(",")
-    
-    #TODO: very hacky
-    for i in range(0, len(files_to_copy)):
-        files_to_copy[i] = files_to_copy[i].strip().replace("\"", "")
+    # get the information from the config file
+    files_to_copy = config['default']["files_to_copy"].split(",")
+    files_to_copy = [f.strip().replace("\"", "") for f in files_to_copy]
 
+    print("Files to copy to each student directory")
     print(files_to_copy)
 
+    #=============================
     print("Extracting main zip file to files directory...")
     
     do_command("mkdir files")
@@ -82,18 +82,15 @@ if __name__ == '__main__':
     dir_name = "./files"
     dirList = os.listdir(dir_name)
     dirList.sort()
-        
-    #p = Pool()
-    #num_threads = 1
-    #(thread_queue, threads) = start_threads(num_threads)
-    
 
     print("Fixing up student's files")
+    #primarily to remove non-utf-8 encoded names
 
     for f in dirList:
         new_f = handle_encoding(f)
 
         if new_f != f:
+            print("Moving " + str(f) + " to " + str(new_f))
             do_command("mv \"" + dir_name + "/" + f + "\" \"" + dir_name + "/" + new_f + "\"")
 
     dirList = os.listdir(dir_name)
@@ -133,7 +130,9 @@ if __name__ == '__main__':
         new_name = handle_encoding(f)
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + new_name + "\"")
         
-        
+
+    plag_detect = PlagarismDetector()
+    sigs = []
     
     compile_and_run_script = "compile_and_run.py"
 
@@ -147,12 +146,17 @@ if __name__ == '__main__':
             print("Error: " + d + " is not a directory.")
             continue
 
+        student_sig = [d]
+
         #sort student files by modification time
         subdirList = os.listdir(d_with_dir)
         subdirList.sort(key=lambda x: os.path.getmtime( d_with_dir + "/" + x))
 
+        #create files if submission wasn't to specifications
+        #so TAs can easily add comments/remove marks
         zip_warning = "STUDENT_SHOULD_USE_ZIP"
         class_warning = "STUDENT_SHOULD_REMOVE_CLASS_FILES"
+
         for f in subdirList:
             #f = handle_encoding(f)
             #save file name with directory prepended. Note the escaped quotations.
@@ -162,23 +166,27 @@ if __name__ == '__main__':
                 command_line = "unzip -j -q -o " + f_with_dir + " -d \"" + d_with_dir + "\""
                 do_command(command_line)
                 do_command("rm " + f_with_dir)
+
             elif f.endswith(".rar"):
                 #print("Unraring file: " + f)
                 command_line = "unrar e -o+ -inul "  + f_with_dir + " \"" + d_with_dir + "/\" "
                 do_command(command_line)
                 do_command("rm " + f_with_dir)
                 do_command("touch \"" + d_with_dir + "/" + zip_warning + "\"")
+
             elif f.endswith(".tar.gz"):
                 #print("Untaring file: " + f)
                 command_line = "tar -C \"" + d_with_dir + "/\" -xf " + f_with_dir
                 do_command(command_line)
                 do_command("rm " + f_with_dir)
                 do_command("touch \"" + d_with_dir + "/" + zip_warning + "\"")
-            #elif f.endswith(".class"): TODO: Fix this case
-            #    print("Found class file: " + f)
-            #    do_command("touch \"" + d_with_dir + "/" + class_warning + "\"")
+            elif f.endswith(".class"):
+                #print("Found class file: " + f)
+                do_command("touch \"" + d_with_dir + "/" + class_warning + "\"")
             else:
                 #as we are sorting by modified, by moving the files we should only be keeping the newest files
+                #should be avoided if myCourses only keeps newest submission
+
                 #print("Other file: " + f)
                 split_filename = f.split("-")
                 filename = split_filename[-1]
@@ -194,18 +202,39 @@ if __name__ == '__main__':
         command_line = "cp ./compile_and_run.py \"" + d_with_dir + "/compile_and_run.py\""
         do_command(command_line)
 
-        #copy the script to compile files, as well as the marking template
+        # copy the script to compile files, as well as the marking template
         for copy_file in files_to_copy:
-            print("copy file: " + copy_file)
+            #print("copy file: " + copy_file)
             command_line = "cp ./config/" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
             do_command(command_line)
 
-        #run the compiling/running script
+
+        #=====================
+        #look for similar files amongst students by generating signatures for each file
+        #======================
+        subdirList = os.listdir(d_with_dir)
+        dirList.sort()
+        for f in subdirList:
+            if f.endswith(".java") and not f.startswith("."):
+                genned_sig = plag_detect.generate_sig(d_with_dir, f)
+                student_sig.append([f, genned_sig])
+
+        sigs.append(student_sig)
+
+
+        #================================
+        #run the compiling/running script in each directory
+        #================================
         saved_working_path = os.getcwd()
         print(d_with_dir + "/")
         os.chdir(d_with_dir + "/")
         command_line = "python " + compile_and_run_script
         do_command(command_line)
         os.chdir(saved_working_path)
+
+
+
+    plag_detect.compare_sigs(sigs)
+
 
 
