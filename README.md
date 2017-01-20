@@ -1,6 +1,8 @@
 MyCoursesGrading
 ================
-A set of Python scripts to aid MyCoursesGrading. Note that these script are built to run on Unix systems.
+A set of Python scripts to aid MyCoursesGrading. Note that these scripts are built to run on Linux systems.
+
+This script also runs a custom plagarism checker on the submitted files. More information is found at the bottom of this document. 
 
 Overview
 ================
@@ -36,5 +38,17 @@ If you need to re-compile or re-run the student's code, navigate to the student 
 Place student grades and comments in template.txt
 
 At end of grading, run 'python collect_grades.py'. This will create a grade.txt file which contains all the text from the templates.txt contained in each student folder. This is designed such that you can easily enter grades and comments on MyCourses.
+
+Plagarism Detector
+================
+
+This repository also contains a plagarism detector, which is a custom algorithm to detect Java source code files which are very similar in two different students submissions.
+
+During the execution of the marking script, a signature is made for each .java file. This signature is a list of numbers, where each entry is the count of how many "words" appear on that line.
+
+At the end of the marking script, the plagarism detector is then invoked. Each signature for each file is compared with every other student. As these sequences are a list of numbers, the intuition is to find lists that are "most similar". This is performed using Python's difflib.SequenceMatcher. This gives a numeric score to the signature's similarity.
+
+Finally, the similarities are measured against a plagarism threshold defined in the top of the PlagarismDetector. All similarities above this threshold are reported, along with the student's names. The marker is then able to examine the files in question and alert the course supervisor as needed.
+
 
 
