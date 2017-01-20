@@ -2,10 +2,10 @@ import re
 import unicodedata
 import difflib
 
-class PlagarismDetector:
+class PlagiarismDetector:
 
     def __init__(self):
-        self.plagarism_threshold = 0.5
+        self.plagiarism_threshold = 0.5
 
     def handle_encoding(self, s):
         return str(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore'))
@@ -138,7 +138,7 @@ class PlagarismDetector:
                 #         # print("Ratio: " + str(sm.ratio()))
                 #         check = True
 
-                if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagarism_threshold:
+                if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagiarism_threshold:
                     print(name1 + " VS " + name2 + ": " + str(ratios))
                     fr = (ratios[0] + ratios[1]) / 2
                     final_ratios.append([name1, name2, fr])

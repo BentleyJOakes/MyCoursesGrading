@@ -12,7 +12,7 @@ import configparser
 
 import unicodedata
 
-from PlagarismDetector import PlagarismDetector
+from PlagiarismDetector import PlagiarismDetector
 
 
 def handle_encoding(s):
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         do_command("mv \"" + dir_name + "/" + f + "\" \"" + new_dir +  "/" + new_name + "\"")
         
 
-    plag_detect = PlagarismDetector()
+    plag_detect = PlagiarismDetector()
     sigs = []
     
     compile_and_run_script = "compile_and_run.py"
