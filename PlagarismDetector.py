@@ -3,6 +3,10 @@ import unicodedata
 import difflib
 
 class PlagarismDetector:
+
+    def __init__(self):
+        self.plagarism_threshold = 0.5
+
     def handle_encoding(self, s):
         return str(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore'))
 
@@ -47,6 +51,10 @@ class PlagarismDetector:
         # ===================
         # do the comparison of student files
 
+        #This is hardcoded for just two files right now
+        #That's the LL and LP
+        #TODO: Make this generalize
+
         final_ratios = []
 
         def getKey(item):
@@ -54,9 +62,6 @@ class PlagarismDetector:
 
         for i in range(0, len(sigs)):
             sig = sigs[i]
-            # for sig in sigs:
-
-
 
             name1 = sig[0]
 
@@ -102,14 +107,12 @@ class PlagarismDetector:
                 # print(LL2)
 
 
-                ratio = 0.01
-
                 ratios = []
-                check = False
                 if LL1 or LL2:
                     sm = difflib.SequenceMatcher(None, LL1, LL2)
                     # print(sm.ratio())
                     ratios.append(sm.ratio())
+
                     # if sm.ratio() > ratio:
                     #     #print("Check " + name1 + ": " + sig[1][0])
                     #     #print("VS " + name2 + ": " + sig2[1][0])
@@ -119,6 +122,7 @@ class PlagarismDetector:
                 if LP1 or LP2:
                     sm = difflib.SequenceMatcher(None, LP1, LP2)
                     ratios.append(sm.ratio())
+
                     # if sm.ratio() > ratio:
                     # #     print("Check " + name1 + ": " + sig[2][0])
                     # #     print("VS " + name2 + ": " + sig2[2][0])
@@ -134,14 +138,10 @@ class PlagarismDetector:
                 #         # print("Ratio: " + str(sm.ratio()))
                 #         check = True
 
-                if len(ratios) > 0 and sum(ratios) / len(ratios) > ratio:
+                if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagarism_threshold:
                     print(name1 + " VS " + name2 + ": " + str(ratios))
                     fr = (ratios[0] + ratios[1]) / 2
                     final_ratios.append([name1, name2, fr])
 
         for name1, name2, ratio in sorted(final_ratios, key = getKey):
             print(name1 + " VS " + name2 + ": " + str(ratio))
-
-if __name__ == "__main__":
-    print(generate_sig("files/Student1/", "LanguageLearner.java"))
-    print(generate_sig("files/Student2/", "LanguageLearner.java"))
