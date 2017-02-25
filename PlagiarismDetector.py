@@ -140,8 +140,8 @@ class PlagiarismDetector:
 
                 if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagiarism_threshold:
                     print(name1 + " VS " + name2 + ": " + str(ratios))
-                    fr = (ratios[0] + ratios[1]) / 2
-                    final_ratios.append([name1, name2, fr])
+                    
+                    final_ratios.append([name1, name2, sum(ratios) / len(ratios)])
 
         for name1, name2, ratio in sorted(final_ratios, key = getKey):
             print(name1 + " VS " + name2 + ": " + str(ratio))

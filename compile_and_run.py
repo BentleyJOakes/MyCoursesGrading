@@ -42,10 +42,12 @@ for i in range(0, len(files_to_compile)):
     if len(compile_file_parts) == 3:
         compile_file_packages.append(compile_file_parts[0])
         compile_file_names.append(compile_file_parts[1] + "." + compile_file_parts[2])
-    else:
+    elif len(compile_file_parts) == 2:
         compile_file_packages.append("")
         compile_file_names.append(compile_file_parts[0] + "." + compile_file_parts[1])
-
+    else:
+        compile_file_packages.append("")
+        compile_file_names.append("")
 
 #Move assignments to right folder for packages
 fileList = os.listdir(".")
@@ -75,6 +77,9 @@ subprocess.call(command_line, shell=True)
 
 
 for i in range(len(files_to_compile)):
+
+    if files_to_compile[i] == "":
+        continue
 
     if compile_file_packages[i] != "":
         compile_package = compile_file_packages[i]
@@ -124,14 +129,16 @@ for i in range(len(files_to_compile)):
 
     do_command("javac " + file_path + " 2>&1 >/dev/null | tee -a LOG_FILE.txt > COMPILE_ERRORS.txt")
     
-
-size_of_error_file = os.stat("COMPILE_ERRORS.txt").st_size
-if size_of_error_file == 0:
-    #No error
-    command_line = "rm -f COMPILE_ERRORS.txt"
-    subprocess.call(command_line, shell=True)
-else:
-    sys.exit("Compile errors for " + os.getcwd())
+try:
+    size_of_error_file = os.stat("COMPILE_ERRORS.txt").st_size
+    if size_of_error_file == 0:
+        #No error
+        command_line = "rm -f COMPILE_ERRORS.txt"
+        subprocess.call(command_line, shell=True)
+    else:
+        sys.exit("Compile errors for " + os.getcwd())
+except FileNotFoundError:
+    pass
       
 command_line = "rm -f output.txt"
 subprocess.call(command_line, shell=True)
@@ -173,6 +180,9 @@ for i in range(0, len(files_to_run)):
 
 for i in range(len(run_file_names)):
 
+    if run_file_names[i] == "":
+        continue
+        
     file_path = run_file_names[i]
     if run_file_packages[i] != "":
         file_path = run_file_packages[i] + "/" + file_path
@@ -181,12 +191,15 @@ for i in range(len(run_file_names)):
     
     do_command("cat RUN_ERRORS.txt >> LOG_FILE.txt")
 
-size_of_error_file = os.stat("RUN_ERRORS.txt").st_size
-if size_of_error_file == 0:
-    #No error
-    command_line = "rm -f RUN_ERRORS.txt"
-    subprocess.call(command_line, shell=True)
-else:
-    sys.exit("Run errors for " + os.getcwd())
+try:
+    size_of_error_file = os.stat("RUN_ERRORS.txt").st_size
+    if size_of_error_file == 0:
+        #No error
+        command_line = "rm -f RUN_ERRORS.txt"
+        subprocess.call(command_line, shell=True)
+    else:
+        sys.exit("Run errors for " + os.getcwd())
+except FileNotFoundError:
+    pass
     
 
