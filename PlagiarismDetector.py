@@ -5,10 +5,10 @@ import difflib
 class PlagiarismDetector:
 
     def __init__(self):
-        self.plagiarism_threshold = 0.5
+        self.plagiarism_threshold = 0.7
 
     def handle_encoding(self, s):
-        return str(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore'))
+        return str(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('utf-8', 'replace'))
 
     def generate_sig(self, d_name, f_name):
 
@@ -19,6 +19,7 @@ class PlagiarismDetector:
         sig = []
         for line in f:
             line = self.handle_encoding(line)
+
             line = line.split("//")[0]
             line = line.replace("{", "").replace("}", "").replace("?", "")
             line = line.strip()
@@ -54,6 +55,8 @@ class PlagiarismDetector:
         #This is hardcoded for just two files right now
         #That's the LL and LP
         #TODO: Make this generalize
+
+        ratio_file = open("ratios.txt",'w')
 
         final_ratios = []
 
@@ -139,9 +142,33 @@ class PlagiarismDetector:
                 #         check = True
 
                 if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagiarism_threshold:
-                    print(name1 + " VS " + name2 + ": " + str(ratios))
-                    
-                    final_ratios.append([name1, name2, sum(ratios) / len(ratios)])
+                    s = name1 + " VS " + name2 + ": " + str(ratios)
+                    print(s)
+                    ratio_file.write(s)
+                    final_ratios.append([name1, name2, sum(ratios) / len(ratios), [ratios]])
 
-        for name1, name2, ratio in sorted(final_ratios, key = getKey):
-            print(name1 + " VS " + name2 + ": " + str(ratio))
+        print("Final ratios:")
+        for name1, name2, ratio, ratios in sorted(final_ratios, key = getKey):
+            s = name1 + " VS " + name2 + ": " + str(ratio) + " " + str(ratios)
+            print(s)
+            ratio_file.write(s)
+
+        ratio_file.close()
+
+if __name__ == "__main__":
+
+    PD = PlagiarismDetector()
+
+    sigs = []
+
+    s1 = ["BS"]
+
+    s1.append(["BSGambling.java", PD.generate_sig("A2", "BSGambling.java")])
+
+    s2 = ["DR"]
+    s2.append(["DRGambling.java", PD.generate_sig("A2", "DRGambling.java")])
+
+    sigs = [s1, s2]
+    print(sigs)
+
+    PD.compare_sigs(sigs)

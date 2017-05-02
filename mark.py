@@ -90,7 +90,11 @@ if __name__ == '__main__':
         new_f = handle_encoding(f)
 
         if new_f != f:
-            print("Moving " + str(f) + " to " + str(new_f))
+            try:
+                print("Moving " + str(f) + " to " + str(new_f))
+            except UnicodeEncodeError:
+                print("Moved file to " + str(new_f))
+
             do_command("mv \"" + dir_name + "/" + f + "\" \"" + dir_name + "/" + new_f + "\"")
 
     dirList = os.listdir(dir_name)
