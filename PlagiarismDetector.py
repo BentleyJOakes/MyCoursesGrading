@@ -64,94 +64,47 @@ class PlagiarismDetector:
             return item[2]
 
         for i in range(0, len(sigs)):
-            sig = sigs[i]
+            sig1 = sigs[i]
 
-            name1 = sig[0]
-
-            try:
-                LL1 = sig[1][1]
-            except IndexError:
-                LL1 = []
-
-            try:
-                LP1 = sig[2][1]
-            except IndexError:
-                LP1 = []
-
-            try:
-                LFN1 = sig[3][1]
-            except IndexError:
-                LFN1 = []
+            student_name1 = sig1[0]
 
             for j in range(i, len(sigs)):
                 sig2 = sigs[j]
 
                 # for sig2 in sigs:
-                name2 = sig2[0]
-                try:
-                    LL2 = sig2[1][1]
-                except IndexError:
-                    LL2 = []
+                student_name2 = sig2[0]
 
-                try:
-                    LP2 = sig2[2][1]
-                except IndexError:
-                    LP2 = []
-
-                try:
-                    LFN2 = sig2[3][1]
-                except IndexError:
-                    LFN2 = []
-
-                if name1 == name2:
+                if student_name1 == student_name2:
                     continue
 
-                # print(LL1)
-                # print(LL2)
-
-
                 ratios = []
-                if LL1 or LL2:
-                    sm = difflib.SequenceMatcher(None, LL1, LL2)
-                    # print(sm.ratio())
-                    ratios.append(sm.ratio())
+                for sig_num in range(1, len(sig1)):
+                    file_sig1_name, file_sig1_sig = sig1[sig_num]
 
-                    # if sm.ratio() > ratio:
-                    #     #print("Check " + name1 + ": " + sig[1][0])
-                    #     #print("VS " + name2 + ": " + sig2[1][0])
-                    #     #print("Ratio: " + str(sm.ratio()))
-                    #     check = True
+                    try:
+                        file_sig2_name, file_sig2_sig = sig2[sig_num]
+                    except IndexError:
+                        file_sig2_name = None
+                        file_sig2_sig = None
 
-                if LP1 or LP2:
-                    sm = difflib.SequenceMatcher(None, LP1, LP2)
-                    ratios.append(sm.ratio())
+                    if file_sig1_sig and file_sig2_sig:
+                        sm = difflib.SequenceMatcher(None, file_sig1_sig, file_sig2_sig)
+                        # print(sm.ratio())
+                        ratios.append(sm.ratio())
 
-                    # if sm.ratio() > ratio:
-                    # #     print("Check " + name1 + ": " + sig[2][0])
-                    # #     print("VS " + name2 + ": " + sig2[2][0])
-                    # #     print("Ratio: " + str(sm.ratio()))
-                    #     check = True
 
-                # if LFN1 or LFN2:
-                #     sm = difflib.SequenceMatcher(None, LFN1, LFN2)
-                #     ratios.append(sm.ratio())
-                #     if sm.ratio() > ratio:
-                #         # print("Check " + name1 + ": " + sig[3][0])
-                #         # print("VS " + name2 + ": " + sig2[3][0])
-                #         # print("Ratio: " + str(sm.ratio()))
-                #         check = True
 
                 if len(ratios) > 0 and sum(ratios) / len(ratios) > self.plagiarism_threshold:
-                    s = name1 + " VS " + name2 + ": " + str(ratios)
+                    s = student_name1 + " VS " + student_name2 + ": " + str(ratios)
                     print(s)
-                    ratio_file.write(s)
-                    final_ratios.append([name1, name2, sum(ratios) / len(ratios), [ratios]])
+                    ratio_file.write(s + "\n")
+                    final_ratios.append([student_name1, student_name2, sum(ratios) / len(ratios), [ratios]])
 
         print("Final ratios:")
         for name1, name2, ratio, ratios in sorted(final_ratios, key = getKey):
             s = name1 + " VS " + name2 + ": " + str(ratio) + " " + str(ratios)
             print(s)
-            ratio_file.write(s)
+            ratio_file.write(s + "\n")
 
         ratio_file.close()
 
@@ -161,12 +114,12 @@ if __name__ == "__main__":
 
     sigs = []
 
-    s1 = ["BS"]
+    s1 = ["AH"]
 
-    s1.append(["BSGambling.java", PD.generate_sig("A2", "BSGambling.java")])
+    s1.append(["AHCharacter.java", PD.generate_sig("A5", "AHCharacter.java")])
 
-    s2 = ["DR"]
-    s2.append(["DRGambling.java", PD.generate_sig("A2", "DRGambling.java")])
+    s2 = ["WO"]
+    s2.append(["WOCharacter.java", PD.generate_sig("A5", "WOCharacter.java")])
 
     sigs = [s1, s2]
     print(sigs)

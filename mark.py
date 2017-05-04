@@ -217,6 +217,7 @@ if __name__ == '__main__':
         #look for similar files amongst students by generating signatures for each file
         #======================
         subdirList = os.listdir(d_with_dir)
+        subdirList.sort()
         dirList.sort()
         for f in subdirList:
             if f.endswith(".java") and not f.startswith("."):
