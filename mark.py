@@ -28,9 +28,14 @@ if __name__ == '__main__':
 
     #set flags
     reset_mode = False
-    if len(sys.argv) > 1 and sys.argv[1] == "--reset":
+    plag_mode = False
+    if "--reset" in sys.argv:
         print("Setting reset mode. Files directory will be deleted if found.")
         reset_mode = True
+
+    if "--plag" in sys.argv:
+        print("Setting plagiarism mode. Will only report plagiarism results.")
+        plag_mode = True
     
     #=============================
     # Initial safety checks and extracting main zip
@@ -206,11 +211,12 @@ if __name__ == '__main__':
         command_line = "cp ./compile_and_run.py \"" + d_with_dir + "/compile_and_run.py\""
         do_command(command_line)
 
-        # copy the script to compile files, as well as the marking template
-        for copy_file in files_to_copy:
-            #print("copy file: " + copy_file)
-            command_line = "cp ./config/" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
-            do_command(command_line)
+        if not plag_mode:
+            # copy the script to compile files, as well as the marking template
+            for copy_file in files_to_copy:
+                #print("copy file: " + copy_file)
+                command_line = "cp ./config/" +  copy_file + " \"" + d_with_dir + "/" + copy_file + "\""
+                do_command(command_line)
 
 
         #=====================
@@ -227,15 +233,16 @@ if __name__ == '__main__':
         sigs.append(student_sig)
 
 
-        #================================
-        #run the compiling/running script in each directory
-        #================================
-        saved_working_path = os.getcwd()
-        print(d_with_dir + "/")
-        os.chdir(d_with_dir + "/")
-        command_line = "python " + compile_and_run_script
-        do_command(command_line)
-        os.chdir(saved_working_path)
+        if not plag_mode:
+            #================================
+            #run the compiling/running script in each directory
+            #================================
+            saved_working_path = os.getcwd()
+            print(d_with_dir + "/")
+            os.chdir(d_with_dir + "/")
+            command_line = "python " + compile_and_run_script
+            do_command(command_line)
+            os.chdir(saved_working_path)
 
 
 
