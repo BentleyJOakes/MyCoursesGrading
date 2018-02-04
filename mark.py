@@ -219,18 +219,19 @@ if __name__ == '__main__':
                 do_command(command_line)
 
 
-        #=====================
-        #look for similar files amongst students by generating signatures for each file
-        #======================
-        subdirList = os.listdir(d_with_dir)
-        subdirList.sort()
-        dirList.sort()
-        for f in subdirList:
-            if f.endswith(".java") and not f.startswith("."):
-                genned_sig = plag_detect.generate_sig(d_with_dir, f)
-                student_sig.append([f, genned_sig])
+        if plag_mode:
+            #=====================
+            #look for similar files amongst students by generating signatures for each file
+            #======================
+            subdirList = os.listdir(d_with_dir)
+            subdirList.sort()
+            dirList.sort()
+            for f in subdirList:
+                if f.endswith(".java") and not f.startswith("."):
+                    genned_sig = plag_detect.generate_sig(d_with_dir, f)
+                    student_sig.append([f, genned_sig])
 
-        sigs.append(student_sig)
+            sigs.append(student_sig)
 
 
         if not plag_mode:
@@ -245,8 +246,8 @@ if __name__ == '__main__':
             os.chdir(saved_working_path)
 
 
-
-    plag_detect.compare_sigs(sigs)
+    if plag_mode:
+        plag_detect.compare_sigs(sigs)
 
 
 
